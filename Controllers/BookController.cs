@@ -23,14 +23,17 @@ namespace Konyvtar.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<BookReadDTO>> GetBook(int id)
         {
-            var book = await _context.Books
-                .Include(b => b.Author)
-                .FirstOrDefaultAsync(b => b.Id == id);
-
+            var book = await _context.Books.Include(b => b.Author).FirstOrDefaultAsync(b => b.Id == id);
             if (book == null) return NotFound();
 
-            var bookDto = _mapper.Map<BookReadDTO>(book);
-            return Ok(bookDto);
+            return Ok(_mapper.Map<BookReadDTO>(book));
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<BookReadDTO>>> GetAllBooks()
+        {
+            var books = await _context.Books.Include(b => b.Author).ToListAsync();
+            return Ok(_mapper.Map<List<BookReadDTO>>(books));
         }
 
         [HttpPost]
@@ -40,8 +43,32 @@ namespace Konyvtar.Controllers
             _context.Books.Add(book);
             await _context.SaveChangesAsync();
 
-            var readDto = _mapper.Map<BookReadDTO>(book);
-            return CreatedAtAction(nameof(GetBook), new { id = book.Id }, readDto);
+            return CreatedAtAction(nameof(GetBook), new { id = book.Id }, _mapper.Map<BookReadDTO>(book));
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateBook(int id, BookCreateDTO bookDto)
+        {
+            var book = await _context.Books.FindAsync(id);
+            if (book == null) return NotFound();
+
+            _mapper.Map(bookDto, book);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        // DELETE api/book/{id}
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteBook(int id)
+        {
+            var book = await _context.Books.FindAsync(id);
+            if (book == null) return NotFound();
+
+            _context.Books.Remove(book);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
     }
 }

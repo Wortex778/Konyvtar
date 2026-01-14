@@ -29,8 +29,14 @@ namespace Konyvtar.Controllers
 
             if (author == null) return NotFound();
 
-            var authorDto = _mapper.Map<AuthorReadDTO>(author);
-            return Ok(authorDto);
+            return Ok(_mapper.Map<AuthorReadDTO>(author));
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<AuthorReadDTO>>> GetAllAuthors()
+        {
+            var authors = await _context.Authors.Include(a => a.Books).ToListAsync();
+            return Ok(_mapper.Map<List<AuthorReadDTO>>(authors));
         }
 
         [HttpPost]
@@ -40,8 +46,39 @@ namespace Konyvtar.Controllers
             _context.Authors.Add(author);
             await _context.SaveChangesAsync();
 
-            var readDto = _mapper.Map<AuthorReadDTO>(author);
-            return CreatedAtAction(nameof(GetAuthor), new { id = author.Id }, readDto);
+            return CreatedAtAction(nameof(GetAuthor), new { id = author.Id }, _mapper.Map<AuthorReadDTO>(author));
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateAuthor(int id, AuthorCreateDTO authorDto)
+        {
+            var author = await _context.Authors.FindAsync(id);
+            if (author == null) return NotFound();
+
+            _mapper.Map(authorDto, author);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteAuthor(int id)
+        {
+            var author = await _context.Authors.FindAsync(id);
+            if (author == null) return NotFound();
+
+            _context.Authors.Remove(author);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<AuthorReadDTO>>> GetAuthors()
+        {
+            var authors = await _context.Authors.ToListAsync();
+            var authorsDto = _mapper.Map<List<AuthorReadDTO>>(authors);
+            return Ok(authorsDto);
         }
     }
 }
