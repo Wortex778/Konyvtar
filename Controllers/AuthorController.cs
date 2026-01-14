@@ -9,17 +9,29 @@ namespace Konyvtar.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class AuthorController : ControllerBase
+    public class AuthorsController : ControllerBase
     {
         private readonly LibraryDbContext _context;
         private readonly IMapper _mapper;
 
-        public AuthorController(LibraryDbContext context, IMapper mapper)
+        public AuthorsController(LibraryDbContext context, IMapper mapper)
         {
             _context = context;
             _mapper = mapper;
         }
 
+        // 3.1 GET: /api/authors
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<AuthorReadDTO>>> GetAuthors()
+        {
+            var authors = await _context.Authors
+                .Include(a => a.Books) // kapcsolódó könyvek betöltése
+                .ToListAsync();
+
+            return Ok(_mapper.Map<List<AuthorReadDTO>>(authors));
+        }
+
+        // 3.2 GET: /api/authors/{id}
         [HttpGet("{id}")]
         public async Task<ActionResult<AuthorReadDTO>> GetAuthor(int id)
         {
@@ -32,23 +44,21 @@ namespace Konyvtar.Controllers
             return Ok(_mapper.Map<AuthorReadDTO>(author));
         }
 
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<AuthorReadDTO>>> GetAllAuthors()
-        {
-            var authors = await _context.Authors.Include(a => a.Books).ToListAsync();
-            return Ok(_mapper.Map<List<AuthorReadDTO>>(authors));
-        }
-
+        // 3.3 POST: /api/authors
         [HttpPost]
         public async Task<ActionResult<AuthorReadDTO>> CreateAuthor(AuthorCreateDTO authorDto)
         {
             var author = _mapper.Map<Author>(authorDto);
+
             _context.Authors.Add(author);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetAuthor), new { id = author.Id }, _mapper.Map<AuthorReadDTO>(author));
+            var authorReadDto = _mapper.Map<AuthorReadDTO>(author);
+
+            return CreatedAtAction(nameof(GetAuthor), new { id = author.Id }, authorReadDto);
         }
 
+        // 3.4 PUT: /api/authors/{id}
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateAuthor(int id, AuthorCreateDTO authorDto)
         {
@@ -61,6 +71,7 @@ namespace Konyvtar.Controllers
             return NoContent();
         }
 
+        // 3.5 DELETE: /api/authors/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAuthor(int id)
         {
@@ -71,14 +82,6 @@ namespace Konyvtar.Controllers
             await _context.SaveChangesAsync();
 
             return NoContent();
-        }
-
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<AuthorReadDTO>>> GetAuthors()
-        {
-            var authors = await _context.Authors.ToListAsync();
-            var authorsDto = _mapper.Map<List<AuthorReadDTO>>(authors);
-            return Ok(authorsDto);
         }
     }
 }
