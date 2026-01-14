@@ -1,4 +1,5 @@
 using Konyvtar.Data;
+using Konyvtar.Profiles;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -13,6 +14,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<LibraryDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 
 var app = builder.Build();
